@@ -6,12 +6,16 @@
 #include<string>
 #include<DirectXMath.h>
 #include <d3dcompiler.h>
+#define DIRECTINPUT_VERSION 0x0800 //DirectInputのバージョン指定
+#include<dinput.h>
 
 using namespace DirectX;
 
 #pragma comment(lib,"d3d12.lib")
 #pragma comment(lib,"dxgi.lib")
 #pragma comment(lib, "d3dcompiler.lib")
+#pragma comment(lib,"dinput8.lib")
+#pragma comment(lib,"dxguid.lib")
 
 //ウインドウプロシージャ
 LRESULT WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
@@ -206,7 +210,27 @@ int WINAPI WinMain(HINSTANCE,HINSTANCE,LPSTR,int){
 	UINT64 fenceVal = 0;
 	result = device->CreateFence(fenceVal, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence));
 
-	
+	//DirectInputの初期化
+	IDirectInput8* directInput = nullptr;
+	result = DirectInput8Create(
+		w.hInstance, DIRECTINPUT_VERSION, IID_IDirectInput8,
+		(void**)&directInput, nullptr);
+	assert(SUCCEEDED(result));
+
+	//キーボードデバイスの生成
+	IDirectInputDevice8* keyboard = nullptr;
+	result = directInput->CreateDevice(GUID_SysKeyboard, &keyboard, NULL);
+	assert(SUCCEEDED(result));
+
+	//入力データ形式のセット
+	result = keyboard->SetDataFormat(&c_dfDIKeyboard); //標準形式
+	assert(SUCCEEDED(result));
+
+	//排他制御レベルのセット
+	result = keyboard->SetCooperativeLevel(
+		hwnd, DISCL_FOREGROUND | DISCL_NONEXCLUSIVE | DISCL_NOWINKEY);
+	assert(SUCCEEDED(result));
+
 	//DirectX初期化処理　ここまで////////////////////////////////////////
 
 	//描画初期化処理/////////////////////
@@ -402,7 +426,14 @@ int WINAPI WinMain(HINSTANCE,HINSTANCE,LPSTR,int){
 			DispatchMessage(&msg);  //プロシージャにメッセージを送る
 		}
 
-		//DirectX毎フレーム処理　ここから
+		//DirectX毎フレーム処理　ここから//////////////////////////
+		
+		//キーボード情報の取得開始
+		keyboard->Acquire();
+		//全キーの入力状態を取得する
+		BYTE key[256] = {};
+		keyboard->GetDeviceState(sizeof(key), key);
+
 		// バックバッファの番号を取得(2つなので0番か1番)
 		UINT bbIndex = swapChain->GetCurrentBackBufferIndex();
 		// 1.リソースバリアで書き込み可能に変更
@@ -419,8 +450,15 @@ int WINAPI WinMain(HINSTANCE,HINSTANCE,LPSTR,int){
 		commandList->OMSetRenderTargets(1, &rtvHandle, false, nullptr);
 
 		// 3.画面クリア R G B A
+
 		FLOAT clearColor[] = { 0.1f,0.25f, 0.5f,0.0f }; // 青っぽい色
 		commandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
+
+		if (key[DIK_SPACE])
+		{
+			FLOAT clearColor[] = { 0.5f,0.5f, 0.5f,0.0f }; 
+			commandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
+		}
 
 		//4.描画コマンドここから
 		
@@ -457,7 +495,7 @@ int WINAPI WinMain(HINSTANCE,HINSTANCE,LPSTR,int){
 		// 描画コマンド
 		commandList->DrawInstanced(_countof(vertices), 1, 0, 0); // 全ての頂点を使って描画
 
-		//4.描画コマンドここまで
+		//4.描画コマンドここまで/////////////////
 
 		// 5.リソースバリアを戻す
 		barrierDesc.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET; // 描画状態から
