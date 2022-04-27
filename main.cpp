@@ -378,6 +378,21 @@ int WINAPI WinMain(HINSTANCE,HINSTANCE,LPSTR,int){
 	result = device->CreateGraphicsPipelineState(&pipelineDesc, IID_PPV_ARGS(&pipelineState));
 	assert(SUCCEEDED(result));
 	
+	//D3D12_INPUT_ELEMENT_DESC inputLayout[] = {
+	//	{
+	//		"POSITION", //セマンティック名
+	//		0,       //同じセマンティック名が複数ある時に使うインデックス(0でよい)
+	//		DXGI_FORMAT_R32G32B32_FLOAT,  //要素数とビット数を表す
+	//		0,       //入力スロットインデックス
+	//		D3D12_APPEND_ALIGNED_ELEMENT,  //データのオフセット値
+	//		D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,  //入力データ種別
+	//		0,       //一度に描画するインデックス数
+	//	},
+	//	//座標以外に、色、テクスチャやUVなどを渡す場合はさらに続ける
+	//	{},
+	//	{},
+	//};
+
 	//ゲームループ
 
 	//メッセージがある？
