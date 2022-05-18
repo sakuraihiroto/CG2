@@ -235,6 +235,23 @@ int WINAPI WinMain(HINSTANCE,HINSTANCE,LPSTR,int){
 
 	//描画初期化処理/////////////////////
 	
+	//定数バッファ用データ構造体(マテリアル)
+	struct ConstBufferDateMaterial {
+		XMFLOAT4 color;//色(R.G.B.A)
+	};
+	//ヒープ設定
+	D3D12_HEAP_PROPERTIES cbHeapProp{};
+	cbHeapProp.Type = D3D12_HEAP_TYPE_UPLOAD;
+	//リソース設定
+	D3D12_RESOURCE_DESC cbResourceDesc{};
+	cbResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+	cbResourceDesc.Width = (sizeof(ConstBufferDateMaterial) + 0xff) & ~0xff; //256バイトアラインメント
+	cbResourceDesc.Height = 1;
+	cbResourceDesc.DepthOrArraySize = 1;
+	cbResourceDesc.MipLevels = 1;
+	cbResourceDesc.SampleDesc.Count = 1;
+	cbResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+
 	// 頂点データ
 	XMFLOAT3 vertices[] = {
 	{ -0.5f, -0.5f, 0.0f }, // 左下
@@ -256,6 +273,29 @@ int WINAPI WinMain(HINSTANCE,HINSTANCE,LPSTR,int){
 	resDesc.MipLevels = 1;
 	resDesc.SampleDesc.Count = 1;
 	resDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+
+	ID3D12Resource* constBuffMaterial = nullptr;
+	//定数ブッファの生成
+	result = device->CreateCommittedResource(
+		&cbHeapProp, //ヒープ設定
+		D3D12_HEAP_FLAG_NONE,
+		&cbResourceDesc, //リソース設定
+		D3D12_RESOURCE_STATE_GENERIC_READ,
+		nullptr,
+		IID_PPV_ARGS(&constBuffMaterial));
+	assert(SUCCEEDED(result));
+	//定数バッファのマッピング
+	ConstBufferDateMaterial* constMapMaterial = nullptr;
+	result = constBuffMaterial->Map(0, nullptr, (void**)&constMapMaterial);//マッピング
+	assert(SUCCEEDED(result));
+	//値を書き込むと自動的に転送される
+	constMapMaterial->color = XMFLOAT4(1, 1, 1, 0.5f);
+	//ルートパラメーターの設定
+	D3D12_ROOT_PARAMETER rootParam = {};
+	rootParam.ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV; //定数バッファビュー
+	rootParam.Descriptor.ShaderRegister = 0;
+	rootParam.Descriptor.RegisterSpace = 0;
+	rootParam.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
 	// 頂点バッファの生成
 	ID3D12Resource* vertBuff = nullptr;
@@ -363,11 +403,30 @@ int WINAPI WinMain(HINSTANCE,HINSTANCE,LPSTR,int){
 	pipelineDesc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE; // カリングしない
 	pipelineDesc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID; // ポリゴン内塗りつぶし
 	pipelineDesc.RasterizerState.DepthClipEnable = true; // 深度クリッピングを有効に
-	pipelineDesc.RasterizerState.FillMode = D3D12_FILL_MODE_WIREFRAME; //ワイヤーフレーム
+	//pipelineDesc.RasterizerState.FillMode = D3D12_FILL_MODE_WIREFRAME; //ワイヤーフレーム
 
-	// ブレンドステート
-	pipelineDesc.BlendState.RenderTarget[0].RenderTargetWriteMask
-		= D3D12_COLOR_WRITE_ENABLE_ALL; // RBGA全てのチャンネルを描画
+	//// ブレンドステート
+	//pipelineDesc.BlendState.RenderTarget[0].RenderTargetWriteMask
+	//	= D3D12_COLOR_WRITE_ENABLE_ALL; // RBGA全てのチャンネルを描画
+	
+	//レンダーターゲットのブレンド設定
+	D3D12_RENDER_TARGET_BLEND_DESC& blenddesc = pipelineDesc.BlendState.RenderTarget[0];
+	blenddesc.RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL; //RGBA全てのチャンネルを描画
+
+	blenddesc.BlendEnable = true; //ブレンドを有効にする
+	blenddesc.BlendOpAlpha = D3D12_BLEND_OP_ADD; //加算
+	blenddesc.SrcBlendAlpha = D3D12_BLEND_ONE; //ソースの値を100%使う
+	blenddesc.DestBlendAlpha = D3D12_BLEND_ZERO; //デストの値を0%使う
+
+	//加算合成
+	blenddesc.BlendOp = D3D12_BLEND_OP_ADD; //加算
+	blenddesc.SrcBlend = D3D12_BLEND_ONE; //ソースの値を100%使う
+	blenddesc.DestBlend = D3D12_BLEND_ONE; //デストの値を100%使う
+
+	//減算合成
+	blenddesc.BlendOp = D3D12_BLEND_OP_REV_SUBTRACT; //デストからソースを減算
+	blenddesc.SrcBlend = D3D12_BLEND_ONE; //ソースの値を100%使う
+	blenddesc.DestBlend = D3D12_BLEND_ONE; //デストの値を100%使う
 
 	// 頂点レイアウトの設定
 	pipelineDesc.InputLayout.pInputElementDescs = inputLayout;
@@ -386,6 +445,9 @@ int WINAPI WinMain(HINSTANCE,HINSTANCE,LPSTR,int){
 	// ルートシグネチャの設定
 	D3D12_ROOT_SIGNATURE_DESC rootSignatureDesc{};
 	rootSignatureDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
+	rootSignatureDesc.pParameters = &rootParam; //ルートパラメーターの先頭アドレス
+	rootSignatureDesc.NumParameters = 1; //ルートパラメーター数
+
 	// ルートシグネチャのシリアライズ
 	ID3DBlob* rootSigBlob = nullptr;
 	result = D3D12SerializeRootSignature(&rootSignatureDesc, D3D_ROOT_SIGNATURE_VERSION_1_0,
@@ -465,9 +527,9 @@ int WINAPI WinMain(HINSTANCE,HINSTANCE,LPSTR,int){
 		
 		// ビューポート設定コマンド
 		D3D12_VIEWPORT viewport{};
-		viewport.Width = window_width / 2;
+		viewport.Width = window_width;
 		viewport.Height = window_height;
-		viewport.TopLeftX = 5;
+		viewport.TopLeftX = 0;
 		viewport.TopLeftY = 0;
 		viewport.MinDepth = 0.0f;
 		viewport.MaxDepth = 1.0f;
@@ -479,22 +541,25 @@ int WINAPI WinMain(HINSTANCE,HINSTANCE,LPSTR,int){
 		scissorRect.left = 0; // 切り抜き座標左
 		scissorRect.right = scissorRect.left + window_width ; // 切り抜き座標右
 		scissorRect.top = 0; // 切り抜き座標上
-		scissorRect.bottom = scissorRect.top + window_height/2; // 切り抜き座標下
+		scissorRect.bottom = scissorRect.top + window_height; // 切り抜き座標下
 		// シザー矩形設定コマンドを、コマンドリストに積む
 		commandList->RSSetScissorRects(1, &scissorRect);
 
 		// パイプラインステートとルートシグネチャの設定コマンド
 		commandList->SetPipelineState(pipelineState);
 		commandList->SetGraphicsRootSignature(rootSignature);
-
+		//定数バッファビュー(CBV)のコマンド
+		commandList->SetGraphicsRootConstantBufferView(0, constBuffMaterial->GetGPUVirtualAddress());
+		
 		// プリミティブ形状の設定コマンド
 		commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST); // 三角形リスト
-
+		
+		commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_LINELIST);
 		// 頂点バッファビューの設定コマンド
 		commandList->IASetVertexBuffers(0, 1, &vbView);
 
 		// 描画コマンド
-		commandList->DrawInstanced(_countof(vertices), 1, 0, 0); // 全ての頂点を使って描画
+		commandList->DrawInstanced(6,1,0,0); // 全ての頂点を使って描画
 
 		//4.描画コマンドここまで/////////////////
 
@@ -530,6 +595,10 @@ int WINAPI WinMain(HINSTANCE,HINSTANCE,LPSTR,int){
 
 		//DirectX毎フレーム処理　ここまで
 		
+		//グラフィックコマンド//////////////
+		//描画コマンド
+		commandList->DrawInstanced(_countof(vertices), 1, 0, 0);
+
 		//Xボタンで終了メッセージがきたらゲームループを抜ける
 		if (msg.message == WM_QUIT) {
 			break;
