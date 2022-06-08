@@ -9,6 +9,7 @@
 #define DIRECTINPUT_VERSION 0x0800 //DirectInputのバージョン指定
 #include<dinput.h>
 
+
 using namespace DirectX;
 
 #pragma comment(lib,"d3d12.lib")
@@ -92,7 +93,7 @@ int WINAPI WinMain(HINSTANCE,HINSTANCE,LPSTR,int){
 	ID3D12GraphicsCommandList* commandList = nullptr;
 	ID3D12CommandQueue* commandQueue = nullptr;
 	ID3D12DescriptorHeap* rtvHeap = nullptr;
-
+	
 	// DXGIファクトリーの生成
 	result = CreateDXGIFactory(IID_PPV_ARGS(&dxgiFactory));
 	assert(SUCCEEDED(result));
@@ -252,21 +253,29 @@ int WINAPI WinMain(HINSTANCE,HINSTANCE,LPSTR,int){
 	cbResourceDesc.SampleDesc.Count = 1;
 	cbResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
 
-	// 頂点データ
-	XMFLOAT3 vertices[] = {
-	{ -0.5f, -0.5f, 0.0f }, // 左下
-	{ -0.5f, +0.5f, 0.0f }, // 左上
-	{ +0.5f, -0.5f, 0.0f }, // 右下
-	{ +0.5f, +0.5f, 0.0f }, // 右上			
+	//頂点データ構造体
+	struct Vertex
+	{
+		XMFLOAT3 pos; //x,y,z座標
+		XMFLOAT2 uv;  //uv座標
+	};
+
+	//頂点データ
+	Vertex vertices[] = {
+		// x      y    z      u     v
+		{{-0.4f,-0.7f,0.0f},{0.0f,1.0f}}, //左下
+		{{-0.4f,+0.7f,0.0f},{0.0f,0.0f}}, //左上
+		{{+0.4f,-0.7f,0.0f},{1.0f,1.0f}}, //右下
+		{{+0.4f,+0.7f,0.0f},{1.0f,0.0f}}, //右上
 	};
 	//インデックスデータ
-	uint16_t indices[] =
-	{
-		0,1,2, //三角形１つ目
-		1,2,3, //三角形２つ目
+	unsigned short indices[] = {
+		0,1,2, //三角形一つ目
+		1,2,3,//三角形二つ目
 	};
+
 	// 頂点データ全体のサイズ = 頂点データ一つ分のサイズ * 頂点データの要素数
-	UINT sizeVB = static_cast<UINT>(sizeof(XMFLOAT3) * _countof(vertices));
+	UINT sizeVB = static_cast<UINT>(sizeof(vertices[0]) * _countof(vertices));
 
 	// 頂点バッファの設定
 	D3D12_HEAP_PROPERTIES heapProp{}; // ヒープ設定
@@ -321,7 +330,7 @@ int WINAPI WinMain(HINSTANCE,HINSTANCE,LPSTR,int){
 	result = constBuffMaterial->Map(0, nullptr, (void**)&constMapMaterial);//マッピング
 	assert(SUCCEEDED(result));
 	//値を書き込むと自動的に転送される
-	constMapMaterial->color = XMFLOAT4(1, 1, 1, 0.5f);
+	constMapMaterial->color = XMFLOAT4(1, 0, 0, 0.5f);
 	//ルートパラメーターの設定
 	D3D12_ROOT_PARAMETER rootParam = {};
 	rootParam.ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV; //定数バッファビュー
@@ -358,8 +367,10 @@ int WINAPI WinMain(HINSTANCE,HINSTANCE,LPSTR,int){
 	resDesc.SampleDesc.Count = 1;
 	resDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
 
+	
+
 	// GPU上のバッファに対応した仮想メモリ(メインメモリ上)を取得
-	XMFLOAT3* vertMap = nullptr;
+	Vertex* vertMap = nullptr;
 	result = vertBuff->Map(0, nullptr, (void**)&vertMap);
 	assert(SUCCEEDED(result));
 	// 全頂点に対して
@@ -376,7 +387,7 @@ int WINAPI WinMain(HINSTANCE,HINSTANCE,LPSTR,int){
 	// 頂点バッファのサイズ
 	vbView.SizeInBytes = sizeVB;
 	// 頂点1つ分のデータサイズ
-	vbView.StrideInBytes = sizeof(XMFLOAT3);
+	vbView.StrideInBytes = sizeof(vertices[0]);
 
 	ID3DBlob* vsBlob = nullptr; // 頂点シェーダオブジェクト
 	ID3DBlob* psBlob = nullptr; // ピクセルシェーダオブジェクト
@@ -430,11 +441,16 @@ int WINAPI WinMain(HINSTANCE,HINSTANCE,LPSTR,int){
 
 	// 頂点レイアウト
 	D3D12_INPUT_ELEMENT_DESC inputLayout[] = {
-	{
-	"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0,
-	D3D12_APPEND_ALIGNED_ELEMENT,
-	D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0
-	}, // (1行で書いたほうが見やすい)
+		{
+			"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0,
+			D3D12_APPEND_ALIGNED_ELEMENT,
+			D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0
+		}, // (1行で書いたほうが見やすい)
+		{ //uv座標(一行で書いたほうが見やすい)
+			"TEXCOORD",0,DXGI_FORMAT_R32G32_FLOAT,0,
+			D3D12_APPEND_ALIGNED_ELEMENT,
+			D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,0
+		},
 	};
 
 	// グラフィックスパイプライン設定
@@ -477,7 +493,14 @@ int WINAPI WinMain(HINSTANCE,HINSTANCE,LPSTR,int){
 	blenddesc.BlendOp = D3D12_BLEND_OP_REV_SUBTRACT; //デストからソースを減算
 	blenddesc.SrcBlend = D3D12_BLEND_ONE; //ソースの値を100%使う
 	blenddesc.DestBlend = D3D12_BLEND_ONE; //デストの値を100%使う
-
+	//色反転
+	blenddesc.BlendOp = D3D12_BLEND_OP_ADD;
+	blenddesc.SrcBlend = D3D12_BLEND_INV_DEST_COLOR;
+	blenddesc.DestBlend = D3D12_BLEND_ZERO;
+	//半透明合成
+	blenddesc.BlendOp = D3D12_BLEND_OP_ADD;
+	blenddesc.SrcBlend = D3D12_BLEND_SRC_ALPHA;
+	blenddesc.DestBlend = D3D12_BLEND_INV_SRC_ALPHA;
 	// 頂点レイアウトの設定
 	pipelineDesc.InputLayout.pInputElementDescs = inputLayout;
 	pipelineDesc.InputLayout.NumElements = _countof(inputLayout);
@@ -529,6 +552,8 @@ int WINAPI WinMain(HINSTANCE,HINSTANCE,LPSTR,int){
 	//	{},
 	//	{},
 	//};
+
+	
 
 	//ゲームループ
 
