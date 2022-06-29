@@ -290,10 +290,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	//頂点データ
 	Vertex vertices[] =
 	{
-		{{ -50.0f,-50.0f,+50.0f},   {0.0f,1.0f}},//左下 インデックス0
-		{{ -50.0f,+50.0f,+50.0f},   {0.0f,0.0f}},//左上 インデックス1
-		{{ +50.0f,-50.0f,+50.0f},   {1.0f,1.0f}},//右下 インデックス2
-		{{ +50.0f,+50.0f,+50.0f},   {1.0f,0.0f}},//右上 インデックス3
+		{{ -50.0f,-50.0f,+0.0f},   {0.0f,1.0f}},//左下 インデックス0
+		{{ -50.0f,+50.0f,+0.0f},   {0.0f,0.0f}},//左上 インデックス1
+		{{ +50.0f,-50.0f,+0.0f},   {1.0f,1.0f}},//右下 インデックス2
+		{{ +50.0f,+50.0f,+0.0f},   {1.0f,0.0f}},//右上 インデックス3
 	};
 
 	//三角形のインデックスデータ
@@ -537,12 +537,21 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 			(float)1280 / 720,//アスペクト比(画面横幅/画面縦幅）
 			1.0f, 1000.0f
 		);
-
-	//
-
+	//ビュー変換行列
+	XMMATRIX matView;
+	XMFLOAT3 eye(0, 0, -100);//視点座標
+	XMFLOAT3 target(0, 0, 0);//注視点座標
+	XMFLOAT3 up(0, 1, 0);//上方向ベクトル
+	matView =
+		XMMatrixLookAtLH(XMLoadFloat3(&eye),
+			XMLoadFloat3(&target),
+			XMLoadFloat3(&up));
 
 	//定数バッファに転送
-	constMapTransform->mat = matProjection;
+	constMapTransform->mat = matView * matProjection;
+
+	//カメラの回転角
+	float angle = 0.0f;
 
 
 	//ヒープ設定
@@ -581,6 +590,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	//値を書き込むと自動的に転送される
 	constMapMaterial->color = XMFLOAT4(1, 0, 0, 0.5f);
 
+
+
 	TexMetadata metadata{};
 	ScratchImage scratchImg{};
 	// WICテクスチャのロード
@@ -599,8 +610,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	}
 	// 読み込んだディフューズテクスチャをSRGBとして扱う
 	metadata.format = MakeSRGB(metadata.format);
-
-
 
 	// ヒープ設定
 	D3D12_HEAP_PROPERTIES textureHeapProp{};
@@ -645,16 +654,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		assert(SUCCEEDED(result));
 	}
 
-	//result = texBuff->WriteToSubresource(
-	//	0,
-	//	nullptr,
-	//	imageData,
-	//	sizeof(XMFLOAT4) * textureWidth,
-	//	sizeof(XMFLOAT4) *textureHeight 
-
-	//);
-
-	//delete imageData;
+	
 
 	// SRVの最大個数
 	const size_t kMaxSRVCount = 2056;
@@ -741,14 +741,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	samplerDesc.MinLOD = 0.0f;                                              //ミップマップ最小値
 	samplerDesc.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
 	samplerDesc.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;           //ピクセルシェーダからのみ使用可能
-
-
-
-
-
-
-
-
 
 
 	//ルートシグネチャ
@@ -857,6 +849,32 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 			OutputDebugStringA("Hit 0\n");
 		}
 
+
+
+		//カメラが周りを回る
+		if (key[DIK_D] || key[DIK_A])
+		{
+			if (key[DIK_D]) { angle += XMConvertToRadians(1.0f); }
+			else if (key[DIK_A]) {
+				angle -= XMConvertToRadians(1.0f);
+			}
+			//angleラジアンだけY軸周りに回転、半径は-100
+			eye.x = -100 * sinf(angle);
+			eye.z = -100 * cosf(angle);
+
+			//ビュー変換行列を作り直す
+
+			matView =
+				XMMatrixLookAtLH(XMLoadFloat3(&eye),
+					XMLoadFloat3(&target),
+					XMLoadFloat3(&up));
+
+		}
+
+		//定数バッファに転送
+		constMapTransform->mat = matView * matProjection;
+
+
 		// バックバッファの番号を取得(2つなので0番か1番)
 		UINT bbIndex = swapChain->GetCurrentBackBufferIndex();
 		// 1.リソースバリアで書き込み可能に変更
@@ -876,7 +894,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		FLOAT clearColor[] = { 0.1f,0.25f, 0.5f,0.0f }; // 青っぽい色
 		commandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
 
+
+
 		// 4.描画コマンドここから
+
 
 
 		//ビューポート設定コマンド
@@ -934,7 +955,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		//commandList->DrawInstanced(6, 1, 0, 0); // 全ての頂点を使って描画
 		commandList->DrawIndexedInstanced(_countof(indices), 1, 0, 0, 0); // インデックスバッファを使って描画
 
-
 		// 4.描画コマンドここまで
 
 		// 5.リソースバリアを戻す
@@ -969,11 +989,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 
 		//DIRECTX毎フレーム処理ここまで
 
+
 	}
 
 	//ウィンドウクラス登録解除
 	UnregisterClass(w.lpszClassName, w.hInstance);
-
 
 	return 0;
 
