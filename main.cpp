@@ -78,7 +78,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 
 
 	HWND hwnd = CreateWindow(w.lpszClassName,//クラス名
-		L"DirectGame",//タイトルバー文字
+		L"DirectXGame",//タイトルバー文字
 		WS_OVERLAPPEDWINDOW,//ウィンドウスタイル
 		CW_USEDEFAULT,//X
 		CW_USEDEFAULT,//Y
@@ -290,10 +290,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	//頂点データ
 	Vertex vertices[] =
 	{
-		{{ 0.0f,100.0f,0.0f},   {0.0f,1.0f}},//左下 インデックス0
-		{{ 0.0f,0.0f,0.0f},     {0.0f,0.0f}},//左上 インデックス1
-		{{ 100.0f,100.0f,0.0f}, {1.0f,1.0f}},//右下 インデックス2
-		{{ 100.0f,0.0f,0.0f},   {1.0f,0.0f}},//右上 インデックス3
+		{{ -50.0f,-50.0f,+50.0f},   {0.0f,1.0f}},//左下 インデックス0
+		{{ -50.0f,+50.0f,+50.0f},   {0.0f,0.0f}},//左上 インデックス1
+		{{ +50.0f,-50.0f,+50.0f},   {1.0f,1.0f}},//右下 インデックス2
+		{{ +50.0f,+50.0f,+50.0f},   {1.0f,0.0f}},//右上 インデックス3
 	};
 
 	//三角形のインデックスデータ
@@ -517,14 +517,33 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		assert(SUCCEEDED(result));
 	}
 
-	//単位行列を追加
-	constMapTransform->mat = XMMatrixIdentity();
+	//並行投影行列の計算
+	constMapTransform->mat = XMMatrixOrthographicOffCenterLH
+	(
+		0.0f, 1280.0f,
+		720.0f, 0.0f,
+		0.0f, 1.0f
+	);
+	//透視投影行列の計算
+	constMapTransform->mat = XMMatrixPerspectiveFovLH(
+		XMConvertToRadians(45.0f),//上下画角45度
+		(float)1280 / 720,//アスペクト比(画面横幅/画面縦幅）
+		0.1f, 1000.0f//前端、奥端
+	);
+	//射影変換行列(透視投影)
+	XMMATRIX matProjection =
+		XMMatrixPerspectiveFovLH(
+			XMConvertToRadians(45.0f),//上下画角45度
+			(float)1280 / 720,//アスペクト比(画面横幅/画面縦幅）
+			1.0f, 1000.0f
+		);
 
-	constMapTransform->mat.r[0].m128_f32[0] = 2.0f / 1280;//横幅
-	constMapTransform->mat.r[1].m128_f32[1] = -2.0f / 720;//縦幅
+	//
 
-	constMapTransform->mat.r[3].m128_f32[0] = -1.0f;//-1平行移動
-	constMapTransform->mat.r[3].m128_f32[1] = +1.0f;//+1平行移動
+
+	//定数バッファに転送
+	constMapTransform->mat = matProjection;
+
 
 	//ヒープ設定
 	D3D12_HEAP_PROPERTIES cbHeapProp{};
@@ -566,7 +585,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	ScratchImage scratchImg{};
 	// WICテクスチャのロード
 	result = LoadFromWICFile(
-		L"Resource/twitter.jpg",   //「Resource」フォルダの「twitter.jpg」
+		L"Resource/twitter.jpg",   //「Resources」フォルダの「twitter.jpg」
 		WIC_FLAGS_NONE,
 		&metadata, scratchImg);
 	ScratchImage mipChain{};
@@ -583,41 +602,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 
 
 
-
-
-	//// 横方向ピクセル数
-	//const size_t textureWidth = 256;
-	//// 縦方向ピクセル数
-	//const size_t textureHeight = 256;
-	//// 配列の要素数
-	//const size_t imageDataCount = textureWidth * textureHeight;
-	//// 画像イメージデータ配列
-	//XMFLOAT4* imageData = new XMFLOAT4[imageDataCount]; // ※必ず後で解放する
-
-	//// 全ピクセルの色を初期化
-	//for (size_t i = 0; i < imageDataCount; i++) {
-	//	imageData[i].x = 0.0f;    // R
-	//	imageData[i].y = 128.0f;    // G
-	//	imageData[i].z = 0.0f;    // B
-	//	imageData[i].w = 1.0f;    // A
-	//}
-
-	//// ヒープ設定
-	//D3D12_HEAP_PROPERTIES textureHeapProp{};
-	//textureHeapProp.Type = D3D12_HEAP_TYPE_CUSTOM;
-	//textureHeapProp.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_WRITE_BACK;
-	//textureHeapProp.MemoryPoolPreference = D3D12_MEMORY_POOL_L0;
-	//// リソース設定
-	//D3D12_RESOURCE_DESC textureResourceDesc{};
-	//textureResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
-	//textureResourceDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
-	//textureResourceDesc.Width = textureWidth;
-	//textureResourceDesc.Height = textureHeight;
-	//textureResourceDesc.DepthOrArraySize = 1;
-	//textureResourceDesc.MipLevels = 1;
-	//textureResourceDesc.SampleDesc.Count = 1;
-
-
 	// ヒープ設定
 	D3D12_HEAP_PROPERTIES textureHeapProp{};
 	textureHeapProp.Type = D3D12_HEAP_TYPE_CUSTOM;
@@ -632,6 +616,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	textureResourceDesc.DepthOrArraySize = (UINT16)metadata.arraySize;
 	textureResourceDesc.MipLevels = (UINT16)metadata.mipLevels;
 	textureResourceDesc.SampleDesc.Count = 1;
+
 
 
 	// テクスチャバッファの生成
@@ -698,12 +683,17 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	// ハンドルの指す位置にシェーダーリソースビュー作成
 	device->CreateShaderResourceView(texBuff, &srvDesc, srvHandle);
 
+
+
+
+
 	// デスクリプタレンジの設定
 	D3D12_DESCRIPTOR_RANGE descriptorRange{};
 	descriptorRange.NumDescriptors = 1;         //一度の描画に使うテクスチャが1枚なので1
 	descriptorRange.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
 	descriptorRange.BaseShaderRegister = 0;     //テクスチャレジスタ0番
 	descriptorRange.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+
 
 
 	// ルートパラメータの設定
@@ -723,6 +713,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	rootParams[2].Descriptor.ShaderRegister = 1;                   // 定数バッファ番号
 	rootParams[2].Descriptor.RegisterSpace = 0;                    // デフォルト値
 	rootParams[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;  // 全てのシェーダから見える
+
+
 
 
 	// 頂点レイアウトの設定
@@ -749,6 +741,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	samplerDesc.MinLOD = 0.0f;                                              //ミップマップ最小値
 	samplerDesc.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
 	samplerDesc.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;           //ピクセルシェーダからのみ使用可能
+
+
+
+
+
+
+
+
 
 
 	//ルートシグネチャ
@@ -857,8 +857,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 			OutputDebugStringA("Hit 0\n");
 		}
 
-
-
 		// バックバッファの番号を取得(2つなので0番か1番)
 		UINT bbIndex = swapChain->GetCurrentBackBufferIndex();
 		// 1.リソースバリアで書き込み可能に変更
@@ -878,10 +876,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		FLOAT clearColor[] = { 0.1f,0.25f, 0.5f,0.0f }; // 青っぽい色
 		commandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
 
-
-
 		// 4.描画コマンドここから
-
 
 
 		//ビューポート設定コマンド
@@ -935,7 +930,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		// 定数バッファビュー(CBV)の設定コマンド2
 		commandList->SetGraphicsRootConstantBufferView(2, constBuffTransform->GetGPUVirtualAddress());
 
-
 		// 描画コマンド
 		//commandList->DrawInstanced(6, 1, 0, 0); // 全ての頂点を使って描画
 		commandList->DrawIndexedInstanced(_countof(indices), 1, 0, 0, 0); // インデックスバッファを使って描画
@@ -974,7 +968,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		assert(SUCCEEDED(result));
 
 		//DIRECTX毎フレーム処理ここまで
-
 
 	}
 
