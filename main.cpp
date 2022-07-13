@@ -118,6 +118,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	ID3D12CommandQueue* commandQueue = nullptr;
 	ID3D12DescriptorHeap* rtvHeap = nullptr;
 
+
+
+
 	//DXGIファクトリーの生成
 	result = CreateDXGIFactory(IID_PPV_ARGS(&dxgiFactory));
 	assert(SUCCEEDED(result));
@@ -241,7 +244,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		device->CreateRenderTargetView(backBuffers[i], &rtvDesc, rtvHandle);
 	}
 
-
 	//リソース設定
 	D3D12_RESOURCE_DESC depthResourceDesc{};
 	depthResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
@@ -281,6 +283,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		&dsvDesc,
 		dsvHeap->GetCPUDescriptorHandleForHeapStart());
 
+
 	//フェンスの生成
 	ID3D12Fence* fence = nullptr;
 	UINT64 fenceVal = 0;
@@ -307,9 +310,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	result = keyboard->SetCooperativeLevel(hwnd, DISCL_FOREGROUND | DISCL_NONEXCLUSIVE | DISCL_NOWINKEY);
 	assert(SUCCEEDED(result));
 
-
-
-
 	//DIRECTX初期化処理ここまで
 
 
@@ -333,35 +333,35 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	Vertex vertices[] =
 	{
 		//前
-		{{ -5.0f,-5.0f,-5.0f}, {},  {0.0f,1.0f}},//左下 インデックス0
-		{{ -5.0f,+5.0f,-5.0f}, {},  {0.0f,0.0f}},//左上 インデックス1
-		{{ +5.0f,-5.0f,-5.0f}, {},  {1.0f,1.0f}},//右下 インデックス2
-		{{ +5.0f,+5.0f,-5.0f}, {},  {1.0f,0.0f}},//右上 インデックス3
-		//後					},  {
-		{{ -5.0f,-5.0f,+5.0f}, {},  {0.0f,1.0f}},//左下 インデックス0
-		{{ -5.0f,+5.0f,+5.0f}, {},  {0.0f,0.0f}},//左上 インデックス1
-		{{ +5.0f,-5.0f,+5.0f}, {},  {1.0f,1.0f}},//右下 インデックス2
-		{{ +5.0f,+5.0f,+5.0f}, {},  {1.0f,0.0f}},//右上 インデックス3
-		//左					},  {
-		{{ -5.0f,-5.0f,-5.0f}, {},  {0.0f,1.0f}},//左下 インデックス0
-		{{ -5.0f,-5.0f,+5.0f}, {},  {0.0f,0.0f}},//左上 インデックス1
-		{{ -5.0f,+5.0f,-5.0f}, {},  {1.0f,1.0f}},//右下 インデックス2
-		{{ -5.0f,+5.0f,+5.0f}, {},  {1.0f,0.0f}},//右上 インデックス3
-		//右					},  {
-		{{ +5.0f,-5.0f,-5.0f}, {},  {0.0f,1.0f}},//左下 インデックス0
-		{{ +5.0f,-5.0f,+5.0f}, {},  {0.0f,0.0f}},//左上 インデックス1
-		{{ +5.0f,+5.0f,-5.0f}, {},  {1.0f,1.0f}},//右下 インデックス2
-		{{ +5.0f,+5.0f,+5.0f}, {},  {1.0f,0.0f}},//右上 インデックス3
-		//下					},  {
-		{{ -5.0f,-5.0f,-5.0f}, {},  {0.0f,1.0f}},//左下 インデックス0
-		{{ -5.0f,-5.0f,+5.0f}, {},  {0.0f,0.0f}},//左上 インデックス1
-		{{ +5.0f,-5.0f,-5.0f}, {},  {1.0f,1.0f}},//右下 インデックス2
-		{{ +5.0f,-5.0f,+5.0f}, {},  {1.0f,0.0f}},//右上 インデックス3
-		//上					},  {
-		{{ -5.0f,+5.0f,-5.0f}, {},  {0.0f,1.0f}},//左下 インデックス0
-		{{ -5.0f,+5.0f,+5.0f}, {},  {0.0f,0.0f}},//左上 インデックス1
-		{{ +5.0f,+5.0f,-5.0f}, {},  {1.0f,1.0f}},//右下 インデックス2
-		{{ +5.0f,+5.0f,+5.0f}, {},  {1.0f,0.0f}},//右上 インデックス3
+		{{ -5.0f,-5.0f,-5.0f},   {},{0.0f,1.0f}},//左下 インデックス0
+		{{ -5.0f,+5.0f,-5.0f},   {},{0.0f,0.0f}},//左上 インデックス1
+		{{ +5.0f,-5.0f,-5.0f},   {},{1.0f,1.0f}},//右下 インデックス2
+		{{ +5.0f,+5.0f,-5.0f},   {},{1.0f,0.0f}},//右上 インデックス3
+		//後
+		{{ -5.0f,-5.0f,+5.0f},   {},{0.0f,1.0f}},//左下 インデックス0
+		{{ -5.0f,+5.0f,+5.0f},   {},{0.0f,0.0f}},//左上 インデックス1
+		{{ +5.0f,-5.0f,+5.0f},   {},{1.0f,1.0f}},//右下 インデックス2
+		{{ +5.0f,+5.0f,+5.0f},   {},{1.0f,0.0f}},//右上 インデックス3
+		//左
+		{{ -5.0f,-5.0f,-5.0f},   {},{0.0f,1.0f}},//左下 インデックス0
+		{{ -5.0f,-5.0f,+5.0f},   {},{0.0f,0.0f}},//左上 インデックス1
+		{{ -5.0f,+5.0f,-5.0f},   {},{1.0f,1.0f}},//右下 インデックス2
+		{{ -5.0f,+5.0f,+5.0f},   {},{1.0f,0.0f}},//右上 インデックス3
+		//右
+		{{ +5.0f,-5.0f,-5.0f},   {},{0.0f,1.0f}},//左下 インデックス0
+		{{ +5.0f,-5.0f,+5.0f},   {},{0.0f,0.0f}},//左上 インデックス1
+		{{ +5.0f,+5.0f,-5.0f},   {},{1.0f,1.0f}},//右下 インデックス2
+		{{ +5.0f,+5.0f,+5.0f},   {},{1.0f,0.0f}},//右上 インデックス3
+		//下
+		{{ -5.0f,-5.0f,-5.0f},   {},{0.0f,1.0f}},//左下 インデックス0
+		{{ -5.0f,-5.0f,+5.0f},   {},{0.0f,0.0f}},//左上 インデックス1
+		{{ +5.0f,-5.0f,-5.0f},   {},{1.0f,1.0f}},//右下 インデックス2
+		{{ +5.0f,-5.0f,+5.0f},   {},{1.0f,0.0f}},//右上 インデックス3
+		//上
+		{{ -5.0f,+5.0f,-5.0f},   {},{0.0f,1.0f}},//左下 インデックス0
+		{{ -5.0f,+5.0f,+5.0f},   {},{0.0f,0.0f}},//左上 インデックス1
+		{{ +5.0f,+5.0f,-5.0f},   {},{1.0f,1.0f}},//右下 インデックス2
+		{{ +5.0f,+5.0f,+5.0f},   {},{1.0f,0.0f}},//右上 インデックス3
 	};
 
 	//三角形のインデックスデータ
@@ -387,7 +387,28 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		21,22,23,//三角形12
 
 	};
-
+	for (int i = 0; i < 24 / 3; i++)
+	{//三角形一つごとに計算
+		//三角形のインデックスを取り出して一時的な変数に入れる
+		unsigned short indices0 = indices[i * 3 + 0];
+		unsigned short indices1 = indices[i * 3 + 1];
+		unsigned short indices2 = indices[i * 3 + 2];
+		//三角形の構成する頂点座標をベクトルに代入
+		XMVECTOR p0 = XMLoadFloat3(&vertices[indices0].pos);
+		XMVECTOR p1 = XMLoadFloat3(&vertices[indices1].pos);
+		XMVECTOR p2 = XMLoadFloat3(&vertices[indices2].pos);
+		//p0→p1 p0→p2ベクトルを計算
+		XMVECTOR v1 = XMVectorSubtract(p1, p0);
+		XMVECTOR v2 = XMVectorSubtract(p2, p0);
+		//外積は両方から垂直なベクトル
+		XMVECTOR normal = XMVector3Cross(v1, v2);
+		//正規化(長さを1にする)
+		normal = XMVector3Normalize(normal);
+		//求めた法線を頂点データに代入
+		XMStoreFloat3(&vertices[indices0].normal, normal);
+		XMStoreFloat3(&vertices[indices1].normal, normal);
+		XMStoreFloat3(&vertices[indices2].normal, normal);
+	}
 
 
 	// 頂点データ全体のサイズ = 頂点データ一つ分のサイズ * 頂点データの要素数
@@ -501,11 +522,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	  {
 		"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0,D3D12_APPEND_ALIGNED_ELEMENT,D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0
 	  },
+		//法線ベクトル
+		{
+		"NORMAL",0,DXGI_FORMAT_R32G32B32_FLOAT,0,D3D12_APPEND_ALIGNED_ELEMENT,D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0
 
-		{ //法線ベクトル
-			"NORMAL",0,DXGI_FORMAT_R32G32B32_FLOAT,0,D3D12_APPEND_ALIGNED_ELEMENT,D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,0
+
 		},
-
 
 		//UV
 	  {
@@ -513,6 +535,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 
 	  },
 	};
+
 
 	// グラフィックスパイプライン設定
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC pipelineDesc{};
@@ -535,7 +558,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	pipelineDesc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK; // 標準設定
 
 	// ラスタライザの設定
-	pipelineDesc.RasterizerState.CullMode = D3D12_CULL_MODE_BACK; // 背面をカリング
+	pipelineDesc.RasterizerState.CullMode = D3D12_CULL_MODE_BACK; // カリング
 	pipelineDesc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID; // ポリゴン内塗りつぶし
 	//pipelineDesc.RasterizerState.FillMode = D3D12_FILL_MODE_WIREFRAME;//ワイヤーフレーム
 	pipelineDesc.RasterizerState.DepthClipEnable = true; // 深度クリッピングを有効に
@@ -655,6 +678,30 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 			XMLoadFloat3(&up));
 
 
+	////ワールド変換行列
+	//XMMATRIX matWorld;
+	//matWorld = XMMatrixIdentity();
+
+	//XMMATRIX matScale;//スケーリング行列
+	//matScale = XMMatrixScaling(1.0f, 0.5f, 1.0f);
+	//matWorld*=matScale;//ワールド行列にスケーリング行列を反映
+
+	//XMMATRIX matRot;//回転行列
+	//matRot = XMMatrixIdentity();
+	//matRot *= XMMatrixRotationZ(XMConvertToRadians(45.0f));//Z軸周りに45°回転
+	//matRot *= XMMatrixRotationX(XMConvertToRadians(15.0f));//X軸周りに15°回転
+	//matRot *= XMMatrixRotationY(XMConvertToRadians(30.0f));//Y軸周りに30°回転
+ //   matWorld*= matRot;//ワールド行列に回転行列を反映
+
+	//XMMATRIX matTrans;//平行移動行列
+	//matTrans = XMMatrixTranslation(-50.0f, 0, 0);//-50,0,0平行移動
+	//matWorld *= matTrans;//ワールド行列に平行移動行列を代入
+
+
+
+	////定数バッファに転送
+	//constMapTransform->mat =matWorld* matView * matProjection;
+
 	//カメラの回転角
 	float angle = 0.0f;
 
@@ -693,7 +740,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 
 
 	//値を書き込むと自動的に転送される
-	constMapMaterial->color = XMFLOAT4(1, 0, 0, 0.5f);
+	constMapMaterial->color = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
 
 
 
@@ -701,7 +748,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	ScratchImage scratchImg{};
 	// WICテクスチャのロード
 	result = LoadFromWICFile(
-		L"Resource/twitter.jpg",   //「Resources」フォルダの「twitter.jpg」
+		L"Resource/mario.jpg",   //「Resources」フォルダの「mario.jpg」
 		WIC_FLAGS_NONE,
 		&metadata, scratchImg);
 	ScratchImage mipChain{};
@@ -715,6 +762,41 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	}
 	// 読み込んだディフューズテクスチャをSRGBとして扱う
 	metadata.format = MakeSRGB(metadata.format);
+
+	//// 横方向ピクセル数
+	//const size_t textureWidth = 256;
+	//// 縦方向ピクセル数
+	//const size_t textureHeight = 256;
+	//// 配列の要素数
+	//const size_t imageDataCount = textureWidth * textureHeight;
+	//// 画像イメージデータ配列
+	//XMFLOAT4* imageData = new XMFLOAT4[imageDataCount]; // ※必ず後で解放する
+
+	//// 全ピクセルの色を初期化
+	//for (size_t i = 0; i < imageDataCount; i++) {
+	//	imageData[i].x = 0.0f;    // R
+	//	imageData[i].y = 128.0f;    // G
+	//	imageData[i].z = 0.0f;    // B
+	//	imageData[i].w = 1.0f;    // A
+	//}
+
+
+
+	//// ヒープ設定
+	//D3D12_HEAP_PROPERTIES textureHeapProp{};
+	//textureHeapProp.Type = D3D12_HEAP_TYPE_CUSTOM;
+	//textureHeapProp.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_WRITE_BACK;
+	//textureHeapProp.MemoryPoolPreference = D3D12_MEMORY_POOL_L0;
+	//// リソース設定
+	//D3D12_RESOURCE_DESC textureResourceDesc{};
+	//textureResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+	//textureResourceDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+	//textureResourceDesc.Width = textureWidth;
+	//textureResourceDesc.Height = textureHeight;
+	//textureResourceDesc.DepthOrArraySize = 1;
+	//textureResourceDesc.MipLevels = 1;
+	//textureResourceDesc.SampleDesc.Count = 1;
+
 
 
 	// ヒープ設定
@@ -759,6 +841,17 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		);
 		assert(SUCCEEDED(result));
 	}
+
+	//result = texBuff->WriteToSubresource(
+	//	0,
+	//	nullptr,
+	//	imageData,
+	//	sizeof(XMFLOAT4) * textureWidth,
+	//	sizeof(XMFLOAT4) *textureHeight 
+
+	//);
+
+	//delete imageData;
 
 	// SRVの最大個数
 	const size_t kMaxSRVCount = 2056;
@@ -813,7 +906,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	rootParams[2].Descriptor.ShaderRegister = 1;                   // 定数バッファ番号
 	rootParams[2].Descriptor.RegisterSpace = 0;                    // デフォルト値
 	rootParams[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;  // 全てのシェーダから見える
-
 
 	// 頂点レイアウトの設定
 	pipelineDesc.InputLayout.pInputElementDescs = inputLayout;
@@ -908,6 +1000,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	ibView.BufferLocation = indexBuff->GetGPUVirtualAddress();
 	ibView.Format = DXGI_FORMAT_R16_UINT;
 	ibView.SizeInBytes = sizeIB;
+
+
 
 
 	//描画初期化処理ここまで
@@ -1028,7 +1122,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		commandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
 		commandList->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
 
+
+
 		// 4.描画コマンドここから
+
+
 
 		//ビューポート設定コマンド
 		D3D12_VIEWPORT viewport{};
@@ -1118,8 +1216,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		assert(SUCCEEDED(result));
 
 		//DIRECTX毎フレーム処理ここまで
-
-
 	}
 
 	//ウィンドウクラス登録解除
